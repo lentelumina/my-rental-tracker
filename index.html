@@ -187,6 +187,9 @@
             db = getFirestore(app);
             auth = getAuth(app);
             console.log("Firebase initialized successfully.");
+            // Log the actual appId and firebaseConfig values for debugging
+            console.log("App ID:", appId);
+            console.log("Firebase Config:", firebaseConfig);
         } catch (e) {
             console.error("Firebase initialization failed:", e);
             showModal("Firebase Error", `Failed to initialize Firebase. Check your '__firebase_config'. Error: ${e.message}`);
@@ -454,6 +457,7 @@
                 };
                 try {
                     // Add document to the 'rentals' collection in Firestore
+                    // CORRECTED PATH: Now writing to public/data/rentals
                     const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
                     await showModal('Success', 'Delivery item added!');
                     console.log("Delivery item added to Firestore with ID:", docRef.id);
@@ -491,6 +495,7 @@
                 };
                 try {
                     // Add document to the 'rentals' collection in Firestore
+                    // CORRECTED PATH: Now writing to public/data/rentals
                     const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
                     await showModal('Success', 'Retrieval item added!');
                     console.log("Retrieval item added to Firestore with ID:", docRef.id);
