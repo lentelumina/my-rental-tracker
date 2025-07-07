@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lénte Lumina Rental Tracker</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Custom background color matching the logo's light peach/beige */
+            background-color: #FDF7F0; /* A soft, light peach/beige */
+        }
+        /* Custom colors based on the Lente Lumina logo */
+        .text-lente-primary {
+            color: #8B4513; /* A warm brown/sienna for text and accents */
+        }
+        .bg-lente-primary {
+            background-color: #8B4513; /* A warm brown/sienna for backgrounds */
+        }
+        .bg-lente-accent {
+            background-color: #E6B88C; /* A slightly darker, muted orange/brown for subtle accents */
+        }
+        .border-lente-accent {
+            border-color: #E6B88C;
+        }
+        .shadow-lente {
+            box-shadow: 0 4px 6px -1px rgba(139, 69, 19, 0.1), 0 2px 4px -1px rgba(139, 69, 19, 0.06);
+        }
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-width: 90%;
+            width: 400px;
+            text-align: center;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 sm:p-6 lg:p-8">
+
+    <!-- Header Section -->
+    <header class="w-full max-w-4xl bg-white rounded-xl shadow-lente p-6 mb-8 flex flex-col sm:flex-row items-center justify-center sm:justify-between">
+        <div class="flex items-center space-x-3 mb-4 sm:mb-0">
+            <!-- Removed Logo-inspired icon (SVG) -->
+            <h1 class="text-3xl font-bold text-lente-primary">Lénte Lumina</h1>
+        </div>
+        <p class="text-lg text-lente-primary text-center sm:text-right">Where Light Meets Lens<br>Rental Tracker</p>
+    </header>
+
+    <!-- Consolidated Input Section -->
+    <section class="w-full max-w-4xl bg-white rounded-xl shadow-lente p-6 mb-6">
+        <h2 class="text-2xl font-semibold text-lente-primary mb-5 border-b-2 border-lente-accent pb-3">Add New Rental Request</h2>
+        <div class="mb-4 space-y-3">
+            <input type="text" id="common-renter-name" placeholder="Renter Name" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-lente-accent">
+            <select id="common-camera-model" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-lente-accent">
+                <option value="">Select Camera Model</option>
+                <option value="Canon PowerShot G7 X Mark II">Canon PowerShot G7 X Mark II</option>
+                <option value="Canon PowerShot G7 X Mark III">Canon PowerShot G7 X Mark III</option>
+                <option value="Fujifilm Instax Mini EVO (Brown)">Fujifilm Instax Mini EVO (Brown)</option>
+                <option value="Fujifilm Instax Mini EVO (Black)">Fujifilm Instax Mini EVO (Black)</option>
+                <option value="Insta360 Ace Pro 2">Insta360 Ace Pro 2</option>
+                <option value="Insta360 X5">Insta360 X5</option>
+                <option value="DJI Osmo Pocket 3">DJI Osmo Pocket 3</option>
+                <option value="DJI Mini 4 Pro">DJI Mini 4 Pro</option>
+            </select>
+            <label for="common-booking-start-date" class="block text-sm font-medium text-lente-primary">Booking Start Date:</label>
+            <input type="date" id="common-booking-start-date" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-lente-accent">
+            <label for="common-booking-start-time" class="block text-sm font-medium text-lente-primary">Booking Start Time:</label>
+            <input type="time" id="common-booking-start-time" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-lente-accent">
+            <label for="common-booking-end-date" class="block text-sm font-medium text-lente-primary">Booking End Date:</label>
+            <input type="date" id="common-booking-end-date" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-lente-accent">
+            <label for="common-booking-end-time" class="block text-sm font-medium text-lente-primary">Booking End Time:</label>
+            <input type="time" id="common-booking-end-time" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-lente-accent">
+            <select id="common-courier-type" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-lente-accent">
+                <option value="">Select Courier Type</option>
+                <option value="Personal">Personal</option>
+                <option value="Third-Party Courier">Third-Party Courier</option>
+            </select>
+            <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mt-4">
+                <button id="add-delivery-btn" class="w-full sm:w-1/2 px-4 py-2 bg-lente-primary text-white rounded-md hover:bg-opacity-90 transition-colors duration-200">Add as Delivery</button>
+                <button id="add-retrieval-btn" class="w-full sm:w-1/2 px-4 py-2 bg-lente-primary text-white rounded-md hover:bg-opacity-90 transition-colors duration-200">Add as Retrieval</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Tracker Grid -->
+    <main class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Deliveries Section -->
+        <section class="bg-white rounded-xl shadow-lente p-6">
+            <h2 class="text-2xl font-semibold text-lente-primary mb-5 border-b-2 border-lente-accent pb-3">For Delivery</h2>
+            <!-- Sorting and Filtering for Delivery -->
+            <div class="mb-4 space-y-2">
+                <label for="sort-delivery-by" class="block text-sm font-medium text-lente-primary">Sort Deliveries By:</label>
+                <select id="sort-delivery-by" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-lente-accent">
+                    <option value="dateAsc">Date (Earliest First)</option>
+                    <option value="dateDesc">Date (Latest First)</option>
+                    <option value="renter">Renter Name</option>
+                    <option value="camera">Camera Model</option>
+                </select>
+                <label for="filter-delivery-status" class="block text-sm font-medium text-lente-primary mt-2">Filter Deliveries By Status:</label>
+                <select id="filter-delivery-status" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-lente-accent">
+                    <option value="all">All</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+            <div id="delivery-list" class="space-y-4">
+                <!-- Delivery items will be rendered here by JavaScript -->
+            </div>
+        </section>
+
+        <!-- Retrievals Section -->
+        <section class="bg-white rounded-xl shadow-lente p-6">
+            <h2 class="text-2xl font-semibold text-lente-primary mb-5 border-b-2 border-lente-accent pb-3">For Retrieval</h2>
+            <!-- Sorting and Filtering for Retrieval -->
+            <div class="mb-4 space-y-2">
+                <label for="sort-retrieval-by" class="block text-sm font-medium text-lente-primary">Sort Retrievals By:</label>
+                <select id="sort-retrieval-by" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-lente-accent">
+                    <option value="dateAsc">Date (Earliest First)</option>
+                    <option value="dateDesc">Date (Latest First)</option>
+                    <option value="renter">Renter Name</option>
+                    <option value="camera">Camera Model</option>
+                </select>
+                <label for="filter-retrieval-status" class="block text-sm font-medium text-lente-primary mt-2">Filter Retrievals By Status:</label>
+                <select id="filter-retrieval-status" class="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-lente-accent">
+                    <option value="all">All</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+            <div id="retrieval-list" class="space-y-4">
+                <!-- Retrieval items will be rendered here by JavaScript -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Custom Modal for Alerts/Confirmations -->
+    <div id="custom-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3 id="modal-title" class="text-xl font-bold text-lente-primary mb-4"></h3>
+            <p id="modal-message" class="text-lente-primary mb-6"></p>
+            <div id="modal-buttons" class="flex justify-center space-x-4">
+                <button id="modal-ok-btn" class="px-6 py-2 bg-lente-primary text-white rounded-md hover:bg-opacity-90 transition-colors duration-200">OK</button>
+                <button id="modal-cancel-btn" class="px-6 py-2 bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-colors duration-200 hidden">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDK imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the Canvas environment
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Data arrays (will be populated from Firestore)
+        let deliveries = [];
+        let retrievals = [];
+
+        // Flags to track if delivery and retrieval have been added for the current input set
+        let deliveryAddedCurrent = false;
+        let retrievalAddedCurrent = false;
+
+        // --- Modal Functions ---
+        const modalOverlay = document.getElementById('custom-modal-overlay');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalOkBtn = document.getElementById('modal-ok-btn');
+        const modalCancelBtn = document.getElementById('modal-cancel-btn');
+
+        /**
+         * Displays a custom modal for alerts or confirmations.
+         * @param {string} title - The title of the modal.
+         * @param {string} message - The message content of the modal.
+         * @param {boolean} [isConfirm=false] - If true, displays a cancel button for confirmation.
+         * @returns {Promise<boolean>} - Resolves true if OK is clicked, false if Cancel is clicked.
+         */
+        function showModal(title, message, isConfirm = false) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modalCancelBtn.classList.toggle('hidden', !isConfirm);
+            modalOverlay.classList.remove('hidden');
+
+            return new Promise((resolve) => {
+                modalOkBtn.onclick = () => {
+                    modalOverlay.classList.add('hidden');
+                    resolve(true);
+                };
+                modalCancelBtn.onclick = () => {
+                    modalOverlay.classList.add('hidden');
+                    resolve(false);
+                };
+            });
+        }
+
+        // --- Data Management & Rendering ---
+
+        /**
+         * Sorts a list of rental items based on the specified criteria.
+         * @param {Array<Object>} list - The array of rental items to sort.
+         * @param {string} sortBy - The sorting criteria ('dateAsc', 'dateDesc', 'renter', 'camera').
+         * @returns {Array<Object>} - The sorted array.
+         */
+        const sortItems = (list, sortBy) => {
+            return [...list].sort((a, b) => { // Create a shallow copy to avoid modifying the original array directly
+                if (sortBy === 'dateAsc') {
+                    const dateA = new Date(`${a.date}T${a.time}`);
+                    const dateB = new Date(`${b.date}T${b.time}`);
+                    return dateA.getTime() - dateB.getTime();
+                } else if (sortBy === 'dateDesc') {
+                    const dateA = new Date(`${a.date}T${a.time}`);
+                    const dateB = new Date(`${b.date}T${b.time}`);
+                    return dateB.getTime() - dateA.getTime();
+                } else if (sortBy === 'renter') {
+                    return a.renter.localeCompare(b.renter);
+                } else if (sortBy === 'camera') {
+                    return a.camera.localeCompare(b.camera);
+                }
+                return 0;
+            });
+        };
+
+        /**
+         * Renders rental items into a specified container, applying sorting and filtering.
+         * @param {Array<Object>} list - The array of rental items to render.
+         * @param {string} containerId - The ID of the HTML element where items will be rendered.
+         * @param {string} type - The type of item ('delivery' or 'retrieval').
+         * @param {string} sortBy - The sorting criteria.
+         * @param {string} filterStatus - The status to filter by ('all', 'Pending', 'Completed').
+         */
+        function renderItems(list, containerId, type, sortBy, filterStatus) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = ''; // Clear existing items
+
+            let filteredList = list;
+            if (filterStatus !== 'all') {
+                filteredList = list.filter(item => item.status === filterStatus);
+            }
+
+            const sortedList = sortItems(filteredList, sortBy); // Sort filtered list
+            
+            if (sortedList.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500 mt-4">No ${type} items to display with current filters.</p>`;
+                return;
+            }
+
+            sortedList.forEach(item => {
+                container.appendChild(createRentalCard(item, type));
+            });
+        }
+
+        /**
+         * Renders both delivery and retrieval lists based on current sort/filter selections.
+         */
+        function renderLists() {
+            const sortDeliveryBy = document.getElementById('sort-delivery-by').value;
+            const filterDeliveryStatus = document.getElementById('filter-delivery-status').value;
+            renderItems(deliveries, 'delivery-list', 'delivery', sortDeliveryBy, filterDeliveryStatus);
+
+            const sortRetrievalBy = document.getElementById('sort-retrieval-by').value;
+            const filterRetrievalStatus = document.getElementById('filter-retrieval-status').value;
+            renderItems(retrievals, 'retrieval-list', 'retrieval', sortRetrievalBy, filterRetrievalStatus);
+        }
+
+        /**
+         * Helper function to format date string to dd-mm-yy format.
+         * @param {string} dateString - The date string in YYYY-MM-DD format.
+         * @returns {string} - The formatted date string.
+         */
+        function formatDateToDDMMYY(dateString) {
+            if (!dateString) return 'N/A';
+            const [year, month, day] = dateString.split('-');
+            return `${day}-${month}-${year.slice(2)}`; // Get last two digits of the year
+        }
+
+        /**
+         * Helper function to convert 24-hour time to 12-hour AM/PM format.
+         * @param {string} time24 - The time string in HH:MM (24-hour) format.
+         * @returns {string} - The formatted time string (e.g., "3:00 PM").
+         */
+        function formatTimeToAmPm(time24) {
+            if (!time24) return 'N/A';
+            const [hours, minutes] = time24.split(':');
+            let h = parseInt(hours, 10);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12;
+            h = h ? h : 12; // The hour '0' should be '12'
+            const m = minutes.padStart(2, '0');
+            return `${h}:${m} ${ampm}`;
+        }
+
+        /**
+         * Creates an HTML card element for a rental item.
+         * @param {Object} item - The rental item object.
+         * @param {string} type - The type of item ('delivery' or 'retrieval').
+         * @returns {HTMLElement} - The created div element representing the rental card.
+         */
+        function createRentalCard(item, type) {
+            const card = document.createElement('div');
+            card.id = `item-${item.id}`; // Use Firestore document ID for unique ID
+            card.className = `bg-lente-accent bg-opacity-30 p-4 rounded-lg shadow-sm border border-lente-accent flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 ${item.status === 'Completed' ? 'opacity-50 line-through' : ''}`;
+
+            // Format date and time for display
+            const formattedDate = formatDateToDDMMYY(item.date);
+            const formattedTime = formatTimeToAmPm(item.time);
+
+            const detailsHtml = `
+                <div>
+                    <p class="font-medium text-lente-primary text-lg">${item.renter}</p>
+                    <p class="text-lente-primary text-sm">Camera: ${item.camera}</p>
+                    <p class="text-lente-primary text-sm">${type === 'delivery' ? 'Deliver By:' : 'Retrieve By:'} <span class="font-semibold">${formattedDate} ${formattedTime}</span></p>
+                    <p class="text-lente-primary text-sm">Courier: <span class="font-semibold">${item.courierType || 'N/A'}</span></p>
+                    <span class="inline-block px-3 py-1 mt-2 text-xs font-semibold rounded-full ${item.status === 'Completed' ? 'bg-green-600' : 'bg-blue-600'} text-white">${item.status}</span>
+                </div>
+            `;
+            card.innerHTML = detailsHtml;
+
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-2 sm:mt-0';
+
+            const toggleButton = document.createElement('button');
+            toggleButton.className = `px-4 py-2 bg-lente-primary text-white rounded-md hover:bg-opacity-90 transition-colors duration-200`;
+            toggleButton.textContent = `Mark as ${item.status === 'Pending' ? 'Completed' : 'Pending'}`;
+
+            toggleButton.addEventListener('click', async () => {
+                const newStatus = item.status === 'Pending' ? 'Completed' : 'Pending';
+                try {
+                    // Update document in Firestore
+                    await updateDoc(doc(db, `artifacts/${appId}/public/data/rentals`, item.id), { status: newStatus });
+                    await showModal('Success', `Item status updated to ${newStatus}!`);
+                } catch (error) {
+                    console.error("Error updating document: ", error);
+                    await showModal('Error', 'Failed to update item status. Please try again.');
+                }
+            });
+            actionsDiv.appendChild(toggleButton);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.className = `px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors duration-200`;
+            deleteButton.textContent = `Delete`;
+
+            deleteButton.addEventListener('click', async () => {
+                const confirmed = await showModal('Confirm Deletion', `Are you sure you want to delete ${item.renter}'s ${type} item?`, true);
+                if (confirmed) {
+                    try {
+                        // Delete document from Firestore
+                        await deleteDoc(doc(db, `artifacts/${appId}/public/data/rentals`, item.id));
+                        await showModal('Success', 'Item deleted successfully!');
+                    } catch (error) {
+                        console.error("Error deleting document: ", error);
+                        await showModal('Error', 'Failed to delete item. Please try again.');
+                    }
+                }
+            });
+            actionsDiv.appendChild(deleteButton);
+
+            card.appendChild(actionsDiv);
+            return card;
+        }
+
+        // --- Consolidated Input Logic ---
+        const commonRenterName = document.getElementById('common-renter-name');
+        const commonCameraModel = document.getElementById('common-camera-model');
+        const commonBookingStartDate = document.getElementById('common-booking-start-date');
+        const commonBookingStartTime = document.getElementById('common-booking-start-time');
+        const commonBookingEndDate = document.getElementById('common-booking-end-date');
+        const commonBookingEndTime = document.getElementById('common-booking-end-time');
+        const commonCourierType = document.getElementById('common-courier-type');
+
+        /**
+         * Clears all common input fields in the "Add New Rental Request" section.
+         */
+        function clearCommonInputs() {
+            commonRenterName.value = '';
+            commonCameraModel.value = '';
+            commonBookingStartDate.value = '';
+            commonBookingStartTime.value = '';
+            commonBookingEndDate.value = '';
+            commonBookingEndTime.value = '';
+            commonCourierType.value = '';
+        }
+
+        /**
+         * Resets the flags that track whether a delivery or retrieval has been added
+         * for the current set of input values.
+         */
+        function resetCurrentAddFlags() {
+            deliveryAddedCurrent = false;
+            retrievalAddedCurrent = false;
+        }
+
+        // Add event listeners to all common input fields to reset flags on change
+        // This ensures that if the user modifies inputs after adding one type,
+        // the flags are reset, allowing them to add the other type or a new entry.
+        [
+            commonRenterName, commonCameraModel, commonBookingStartDate,
+            commonBookingStartTime, commonBookingEndDate, commonBookingEndTime,
+            commonCourierType
+        ].forEach(inputElement => {
+            inputElement.addEventListener('input', resetCurrentAddFlags);
+            inputElement.addEventListener('change', resetCurrentAddFlags);
+        });
+
+
+        // Add New Delivery Item (using common inputs)
+        document.getElementById('add-delivery-btn').addEventListener('click', async () => {
+            const renter = commonRenterName.value.trim();
+            const camera = commonCameraModel.value;
+            const date = commonBookingStartDate.value; // Delivery uses start date
+            const time = commonBookingStartTime.value; // Delivery uses start time
+            const courierType = commonCourierType.value;
+
+            if (renter && camera && date && time && courierType) {
+                const newItem = {
+                    renter,
+                    camera,
+                    date,
+                    time,
+                    courierType,
+                    status: 'Pending',
+                    type: 'delivery' // Distinguish between delivery and retrieval
+                };
+                try {
+                    // Add document to Firestore
+                    await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
+                    await showModal('Success', 'Delivery item added!');
+                    
+                    deliveryAddedCurrent = true; // Mark delivery as added for current input
+                    // If both delivery and retrieval have been added from the same input set, clear inputs
+                    if (deliveryAddedCurrent && retrievalAddedCurrent) {
+                        clearCommonInputs();
+                        resetCurrentAddFlags(); // Reset flags for next input set
+                    }
+                } catch (error) {
+                    console.error("Error adding delivery document: ", error);
+                    await showModal('Error', 'Failed to add delivery item. Please try again.');
+                }
+            } else {
+                await showModal('Input Required', 'Please fill in all required fields for delivery (Renter, Camera, Start Date/Time, Courier Type).');
+            }
+        });
+
+        // Add New Retrieval Item (using common inputs)
+        document.getElementById('add-retrieval-btn').addEventListener('click', async () => {
+            const renter = commonRenterName.value.trim();
+            const camera = commonCameraModel.value;
+            const date = commonBookingEndDate.value; // Retrieval uses end date
+            const time = commonBookingEndTime.value; // Retrieval uses end time
+            const courierType = commonCourierType.value;
+
+            if (renter && camera && date && time && courierType) {
+                const newItem = {
+                    renter,
+                    camera,
+                    date,
+                    time,
+                    courierType,
+                    status: 'Pending',
+                    type: 'retrieval' // Distinguish between delivery and retrieval
+                };
+                try {
+                    // Add document to Firestore
+                    await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
+                    await showModal('Success', 'Retrieval item added!');
+                    
+                    retrievalAddedCurrent = true; // Mark retrieval as added for current input
+                    // If both delivery and retrieval have been added from the same input set, clear inputs
+                    if (deliveryAddedCurrent && retrievalAddedCurrent) {
+                        clearCommonInputs();
+                        resetCurrentAddFlags(); // Reset flags for next input set
+                    }
+                } catch (error) {
+                    console.error("Error adding retrieval document: ", error);
+                    await showModal('Error', 'Failed to add retrieval item. Please try again.');
+                }
+            } else {
+                await showModal('Input Required', 'Please fill in all required fields for retrieval (Renter, Camera, End Date/Time, Courier Type).');
+            }
+        });
+
+        // Event Listeners for Sorting and Filtering
+        document.getElementById('sort-delivery-by').addEventListener('change', renderLists);
+        document.getElementById('filter-delivery-status').addEventListener('change', renderLists);
+        document.getElementById('sort-retrieval-by').addEventListener('change', renderLists);
+        document.getElementById('filter-retrieval-status').addEventListener('change', renderLists);
+
+        // Authentication state listener and data fetching
+        onAuthStateChanged(auth, async (user) => {
+            // Sign in anonymously if no user is authenticated or custom token is not provided
+            if (!user && !initialAuthToken) {
+                try {
+                    await signInAnonymously(auth);
+                } catch (error) {
+                    console.error("Error during anonymous authentication:", error);
+                    await showModal("Authentication Error", "Authentication failed. Please refresh the page.");
+                }
+            } else if (!user && initialAuthToken) {
+                // Use custom token if provided
+                try {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } catch (error) {
+                    console.error("Error during custom token authentication:", error);
+                    await showModal("Authentication Error", "Authentication failed. Please refresh the page.");
+                }
+            }
+            
+            // Listen for rentals to populate deliveries and retrievals lists from the public collection
+            onSnapshot(query(collection(db, `artifacts/${appId}/public/data/rentals`)), (snapshot) => {
+                deliveries = []; // Clear current data
+                retrievals = []; // Clear current data
+
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    // Add the Firestore document ID to the item object
+                    const item = { id: doc.id, ...data }; 
+                    if (item.type === 'delivery') {
+                        deliveries.push(item);
+                    } else if (item.type === 'retrieval') {
+                        retrievals.push(item);
+                    }
+                });
+                renderLists(); // Re-render lists after data changes
+            }, (error) => {
+                console.error("Error listening to rentals: ", error);
+                showModal("Data Load Error", "Failed to load rental data. Please check your connection.");
+            });
+        });
+    </script>
+</body>
+</html>
