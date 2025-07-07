@@ -183,6 +183,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        console.log("Firebase initialized.");
 
         // Data arrays (will be populated from Firestore)
         let deliveries = [];
@@ -207,14 +208,17 @@
             modalMessage.textContent = message;
             modalCancelBtn.classList.toggle('hidden', !isConfirm);
             modalOverlay.classList.remove('hidden');
+            console.log(`Modal displayed: Title - "${title}", Message - "${message}", IsConfirm - ${isConfirm}`);
 
             return new Promise((resolve) => {
                 modalOkBtn.onclick = () => {
                     modalOverlay.classList.add('hidden');
+                    console.log("Modal OK button clicked.");
                     resolve(true);
                 };
                 modalCancelBtn.onclick = () => {
                     modalOverlay.classList.add('hidden');
+                    console.log("Modal Cancel button clicked.");
                     resolve(false);
                 };
             });
@@ -257,6 +261,10 @@
          */
         function renderItems(list, containerId, type, sortBy, filterStatus) {
             const container = document.getElementById(containerId);
+            if (!container) {
+                console.error(`Error: Container with ID '${containerId}' not found.`);
+                return;
+            }
             container.innerHTML = ''; // Clear existing items
 
             let filteredList = list;
@@ -274,19 +282,21 @@
             sortedList.forEach(item => {
                 container.appendChild(createRentalCard(item, type));
             });
+            console.log(`Rendered ${sortedList.length} ${type} items in '${containerId}'.`);
         }
 
         /**
          * Renders both delivery and retrieval lists based on current sort/filter selections.
          */
         function renderLists() {
-            const sortDeliveryBy = document.getElementById('sort-delivery-by').value;
-            const filterDeliveryStatus = document.getElementById('filter-delivery-status').value;
+            const sortDeliveryBy = document.getElementById('sort-delivery-by')?.value || 'dateAsc';
+            const filterDeliveryStatus = document.getElementById('filter-delivery-status')?.value || 'all';
             renderItems(deliveries, 'delivery-list', 'delivery', sortDeliveryBy, filterDeliveryStatus);
 
-            const sortRetrievalBy = document.getElementById('sort-retrieval-by').value;
-            const filterRetrievalStatus = document.getElementById('filter-retrieval-status').value;
+            const sortRetrievalBy = document.getElementById('sort-retrieval-by')?.value || 'dateAsc';
+            const filterRetrievalStatus = document.getElementById('filter-retrieval-status')?.value || 'all';
             renderItems(retrievals, 'retrieval-list', 'retrieval', sortRetrievalBy, filterRetrievalStatus);
+            console.log("Lists re-rendered based on current filters/sorts.");
         }
 
         /**
@@ -350,11 +360,13 @@
             toggleButton.textContent = `Mark as ${item.status === 'Pending' ? 'Completed' : 'Pending'}`;
 
             toggleButton.addEventListener('click', async () => {
+                console.log(`Attempting to toggle status for item ID: ${item.id}`);
                 const newStatus = item.status === 'Pending' ? 'Completed' : 'Pending';
                 try {
                     // Update the document in the 'rentals' collection using its Firestore ID
                     await updateDoc(doc(db, `artifacts/${appId}/public/data/rentals`, item.id), { status: newStatus });
                     await showModal('Success', `Item status updated to ${newStatus}!`);
+                    console.log(`Successfully updated item ID: ${item.id} to status: ${newStatus}`);
                 } catch (error) {
                     console.error("Error updating document: ", error);
                     await showModal('Error', 'Failed to update item status. Please try again.');
@@ -367,16 +379,20 @@
             deleteButton.textContent = `Delete`;
 
             deleteButton.addEventListener('click', async () => {
+                console.log(`Attempting to delete item ID: ${item.id}`);
                 const confirmed = await showModal('Confirm Deletion', `Are you sure you want to delete ${item.renter}'s ${type} item?`, true);
                 if (confirmed) {
                     try {
                         // Delete the document from the 'rentals' collection using its Firestore ID
                         await deleteDoc(doc(db, `artifacts/${appId}/public/data/rentals`, item.id));
                         await showModal('Success', 'Item deleted successfully!');
+                        console.log(`Successfully deleted item ID: ${item.id}`);
                     } catch (error) {
                         console.error("Error deleting document: ", error);
                         await showModal('Error', 'Failed to delete item. Please try again.');
                     }
+                } else {
+                    console.log("Deletion cancelled by user.");
                 }
             });
             actionsDiv.appendChild(deleteButton);
@@ -398,6 +414,7 @@
          * Clears all common input fields in the "Add New Rental Request" section.
          */
         function clearCommonInputs() {
+            console.log("Clearing common input fields.");
             commonRenterName.value = '';
             commonCameraModel.value = '';
             commonBookingStartDate.value = '';
@@ -409,11 +426,14 @@
 
         // Add New Delivery Item (using common inputs)
         document.getElementById('add-delivery-btn').addEventListener('click', async () => {
+            console.log("Add as Delivery button clicked.");
             const renter = commonRenterName.value.trim();
             const camera = commonCameraModel.value;
             const date = commonBookingStartDate.value; // Delivery uses start date
             const time = commonBookingStartTime.value; // Delivery uses start time
             const courierType = commonCourierType.value;
+
+            console.log("Delivery Input Values:", { renter, camera, date, time, courierType });
 
             if (renter && camera && date && time && courierType) {
                 const newItem = {
@@ -427,8 +447,9 @@
                 };
                 try {
                     // Add document to the 'rentals' collection in Firestore
-                    await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
+                    const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
                     await showModal('Success', 'Delivery item added!');
+                    console.log("Delivery item added to Firestore with ID:", docRef.id);
                     clearCommonInputs(); // Clear inputs after successful addition
                 } catch (error) {
                     console.error("Error adding delivery document: ", error);
@@ -436,16 +457,20 @@
                 }
             } else {
                 await showModal('Input Required', 'Please fill in all required fields for delivery (Renter, Camera, Start Date/Time, Courier Type).');
+                console.log("Missing required fields for delivery.");
             }
         });
 
         // Add New Retrieval Item (using common inputs)
         document.getElementById('add-retrieval-btn').addEventListener('click', async () => {
+            console.log("Add as Retrieval button clicked.");
             const renter = commonRenterName.value.trim();
             const camera = commonCameraModel.value;
             const date = commonBookingEndDate.value; // Retrieval uses end date
             const time = commonBookingEndTime.value; // Retrieval uses end time
             const courierType = commonCourierType.value;
+
+            console.log("Retrieval Input Values:", { renter, camera, date, time, courierType });
 
             if (renter && camera && date && time && courierType) {
                 const newItem = {
@@ -459,8 +484,9 @@
                 };
                 try {
                     // Add document to the 'rentals' collection in Firestore
-                    await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
+                    const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
                     await showModal('Success', 'Retrieval item added!');
+                    console.log("Retrieval item added to Firestore with ID:", docRef.id);
                     clearCommonInputs(); // Clear inputs after successful addition
                 } catch (error) {
                     console.error("Error adding retrieval document: ", error);
@@ -468,6 +494,7 @@
                 }
             } else {
                 await showModal('Input Required', 'Please fill in all required fields for retrieval (Renter, Camera, End Date/Time, Courier Type).');
+                console.log("Missing required fields for retrieval.");
             }
         });
 
@@ -479,10 +506,13 @@
 
         // Authentication state listener and data fetching
         onAuthStateChanged(auth, async (user) => {
+            console.log("Authentication state changed. User:", user ? user.uid : "No user");
             // Sign in anonymously if no user is authenticated or custom token is not provided
             if (!user && !initialAuthToken) {
                 try {
+                    console.log("Signing in anonymously...");
                     await signInAnonymously(auth);
+                    console.log("Signed in anonymously.");
                 } catch (error) {
                     console.error("Error during anonymous authentication:", error);
                     await showModal("Authentication Error", "Authentication failed. Please refresh the page.");
@@ -490,7 +520,9 @@
             } else if (!user && initialAuthToken) {
                 // Use custom token if provided
                 try {
+                    console.log("Signing in with custom token...");
                     await signInWithCustomToken(auth, initialAuthToken);
+                    console.log("Signed in with custom token.");
                 } catch (error) {
                     console.error("Error during custom token authentication:", error);
                     await showModal("Authentication Error", "Authentication failed. Please refresh the page.");
@@ -498,7 +530,9 @@
             }
             
             // Listen for rentals to populate deliveries and retrievals lists from the public collection
+            console.log(`Setting up Firestore snapshot listener for artifacts/${appId}/public/data/rentals`);
             onSnapshot(query(collection(db, `artifacts/${appId}/public/data/rentals`)), (snapshot) => {
+                console.log("Firestore snapshot received.");
                 deliveries = []; // Clear current data
                 retrievals = []; // Clear current data
 
@@ -512,6 +546,7 @@
                         retrievals.push(item);
                     }
                 });
+                console.log(`Fetched ${deliveries.length} deliveries and ${retrievals.length} retrievals.`);
                 renderLists(); // Re-render lists after data changes
             }, (error) => {
                 console.error("Error listening to rentals: ", error);
