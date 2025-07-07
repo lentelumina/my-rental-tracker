@@ -176,7 +176,8 @@
 
         // Global variables provided by the Canvas environment
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        // Ensure firebaseConfig is always a valid object, even if __firebase_config is undefined or empty string
+        const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config.trim() !== '' ? JSON.parse(__firebase_config) : {};
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // Initialize Firebase
