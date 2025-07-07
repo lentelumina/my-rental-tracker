@@ -180,10 +180,16 @@
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
         // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        console.log("Firebase initialized.");
+        let app, db, auth;
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            console.log("Firebase initialized successfully.");
+        } catch (e) {
+            console.error("Firebase initialization failed:", e);
+            showModal("Firebase Error", `Failed to initialize Firebase. Check your '__firebase_config'. Error: ${e.message}`);
+        }
 
         // Data arrays (will be populated from Firestore)
         let deliveries = [];
@@ -510,48 +516,71 @@
             // Sign in anonymously if no user is authenticated or custom token is not provided
             if (!user && !initialAuthToken) {
                 try {
-                    console.log("Signing in anonymously...");
+                    console.log("Attempting anonymous sign-in...");
                     await signInAnonymously(auth);
-                    console.log("Signed in anonymously.");
+                    console.log("Anonymous sign-in successful.");
                 } catch (error) {
                     console.error("Error during anonymous authentication:", error);
-                    await showModal("Authentication Error", "Authentication failed. Please refresh the page.");
+                    await showModal("Authentication Error", `Anonymous authentication failed. Please check Firebase Authentication settings. Error: ${error.message}`);
                 }
             } else if (!user && initialAuthToken) {
                 // Use custom token if provided
                 try {
-                    console.log("Signing in with custom token...");
+                    console.log("Attempting custom token sign-in...");
                     await signInWithCustomToken(auth, initialAuthToken);
-                    console.log("Signed in with custom token.");
+                    console.log("Custom token sign-in successful.");
                 } catch (error) {
                     console.error("Error during custom token authentication:", error);
-                    await showModal("Authentication Error", "Authentication failed. Please refresh the page.");
+                    await showModal("Authentication Error", `Custom token authentication failed. Please check your token. Error: ${error.message}`);
                 }
             }
             
-            // Listen for rentals to populate deliveries and retrievals lists from the public collection
-            console.log(`Setting up Firestore snapshot listener for artifacts/${appId}/public/data/rentals`);
-            onSnapshot(query(collection(db, `artifacts/${appId}/public/data/rentals`)), (snapshot) => {
-                console.log("Firestore snapshot received.");
-                deliveries = []; // Clear current data
-                retrievals = []; // Clear current data
+            // After authentication attempt, check if a user is now available
+            if (auth.currentUser) {
+                console.log("User authenticated. UID:", auth.currentUser.uid);
+                // --- FIRESTORE CONNECTIVITY TEST ---
+                try {
+                    const testDocRef = await addDoc(collection(db, `artifacts/${appId}/public/data/test_connectivity`), {
+                        timestamp: new Date().toISOString(),
+                        userId: auth.currentUser.uid,
+                        message: "Firestore write test from client"
+                    });
+                    console.log("Firestore connectivity test: Successfully wrote document with ID:", testDocRef.id);
+                    // You can optionally delete this test document immediately if you don't want it to persist
+                    // await deleteDoc(doc(db, `artifacts/${appId}/public/data/test_connectivity`, testDocRef.id));
+                    // console.log("Test document deleted.");
+                } catch (error) {
+                    console.error("Firestore connectivity test: FAILED to write document.", error);
+                    await showModal("Firestore Test Failed", "Could not write to Firestore. This likely indicates a problem with your Firestore Security Rules or Firebase project setup. Please check the console for more details. Error: " + error.message);
+                }
+                // --- END FIRESTORE CONNECTIVITY TEST ---
 
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    // Add the Firestore document ID to the item object
-                    const item = { id: doc.id, ...data }; 
-                    if (item.type === 'delivery') {
-                        deliveries.push(item);
-                    } else if (item.type === 'retrieval') {
-                        retrievals.push(item);
-                    }
+                // Set up the main snapshot listener for rental data
+                console.log(`Setting up Firestore snapshot listener for artifacts/${appId}/public/data/rentals`);
+                onSnapshot(query(collection(db, `artifacts/${appId}/public/data/rentals`)), (snapshot) => {
+                    console.log("Firestore snapshot received for rentals.");
+                    deliveries = []; // Clear current data
+                    retrievals = []; // Clear current data
+
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        // Add the Firestore document ID to the item object
+                        const item = { id: doc.id, ...data }; 
+                        if (item.type === 'delivery') {
+                            deliveries.push(item);
+                        } else if (item.type === 'retrieval') {
+                            retrievals.push(item);
+                        }
+                    });
+                    console.log(`Fetched ${deliveries.length} deliveries and ${retrievals.length} retrievals.`);
+                    renderLists(); // Re-render lists after data changes
+                }, (error) => {
+                    console.error("Error listening to rentals: ", error);
+                    showModal("Data Load Error", `Failed to load rental data. Please check your connection and Firestore Security Rules. Error: ${error.message}`);
                 });
-                console.log(`Fetched ${deliveries.length} deliveries and ${retrievals.length} retrievals.`);
-                renderLists(); // Re-render lists after data changes
-            }, (error) => {
-                console.error("Error listening to rentals: ", error);
-                showModal("Data Load Error", "Failed to load rental data. Please check your connection.");
-            });
+            } else {
+                console.log("User not authenticated after all attempts. Firestore operations will likely fail.");
+            }
         });
     </script>
 </body>
