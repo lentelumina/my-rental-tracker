@@ -539,23 +539,6 @@
             // After authentication attempt, check if a user is now available
             if (auth.currentUser) {
                 console.log("User authenticated. UID:", auth.currentUser.uid);
-                // --- FIRESTORE CONNECTIVITY TEST ---
-                try {
-                    const testDocRef = await addDoc(collection(db, `artifacts/${appId}/public/data/test_connectivity`), {
-                        timestamp: new Date().toISOString(),
-                        userId: auth.currentUser.uid,
-                        message: "Firestore write test from client"
-                    });
-                    console.log("Firestore connectivity test: Successfully wrote document with ID:", testDocRef.id);
-                    // You can optionally delete this test document immediately if you don't want it to persist
-                    // await deleteDoc(doc(db, `artifacts/${appId}/public/data/test_connectivity`, testDocRef.id));
-                    // console.log("Test document deleted.");
-                } catch (error) {
-                    console.error("Firestore connectivity test: FAILED to write document.", error);
-                    await showModal("Firestore Test Failed", "Could not write to Firestore. This likely indicates a problem with your Firestore Security Rules or Firebase project setup. Please check the console for more details. Error: " + error.message);
-                }
-                // --- END FIRESTORE CONNECTIVITY TEST ---
-
                 // Set up the main snapshot listener for rental data
                 console.log(`Setting up Firestore snapshot listener for artifacts/${appId}/public/data/rentals`);
                 onSnapshot(query(collection(db, `artifacts/${appId}/public/data/rentals`)), (snapshot) => {
