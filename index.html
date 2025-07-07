@@ -188,10 +188,6 @@
         let deliveries = [];
         let retrievals = [];
 
-        // Flags to track if delivery and retrieval have been added for the current input set
-        let deliveryAddedCurrent = false;
-        let retrievalAddedCurrent = false;
-
         // --- Modal Functions ---
         const modalOverlay = document.getElementById('custom-modal-overlay');
         const modalTitle = document.getElementById('modal-title');
@@ -356,7 +352,7 @@
             toggleButton.addEventListener('click', async () => {
                 const newStatus = item.status === 'Pending' ? 'Completed' : 'Pending';
                 try {
-                    // Update document in Firestore
+                    // Update the document in the 'rentals' collection using its Firestore ID
                     await updateDoc(doc(db, `artifacts/${appId}/public/data/rentals`, item.id), { status: newStatus });
                     await showModal('Success', `Item status updated to ${newStatus}!`);
                 } catch (error) {
@@ -374,7 +370,7 @@
                 const confirmed = await showModal('Confirm Deletion', `Are you sure you want to delete ${item.renter}'s ${type} item?`, true);
                 if (confirmed) {
                     try {
-                        // Delete document from Firestore
+                        // Delete the document from the 'rentals' collection using its Firestore ID
                         await deleteDoc(doc(db, `artifacts/${appId}/public/data/rentals`, item.id));
                         await showModal('Success', 'Item deleted successfully!');
                     } catch (error) {
@@ -411,28 +407,6 @@
             commonCourierType.value = '';
         }
 
-        /**
-         * Resets the flags that track whether a delivery or retrieval has been added
-         * for the current set of input values.
-         */
-        function resetCurrentAddFlags() {
-            deliveryAddedCurrent = false;
-            retrievalAddedCurrent = false;
-        }
-
-        // Add event listeners to all common input fields to reset flags on change
-        // This ensures that if the user modifies inputs after adding one type,
-        // the flags are reset, allowing them to add the other type or a new entry.
-        [
-            commonRenterName, commonCameraModel, commonBookingStartDate,
-            commonBookingStartTime, commonBookingEndDate, commonBookingEndTime,
-            commonCourierType
-        ].forEach(inputElement => {
-            inputElement.addEventListener('input', resetCurrentAddFlags);
-            inputElement.addEventListener('change', resetCurrentAddFlags);
-        });
-
-
         // Add New Delivery Item (using common inputs)
         document.getElementById('add-delivery-btn').addEventListener('click', async () => {
             const renter = commonRenterName.value.trim();
@@ -452,16 +426,10 @@
                     type: 'delivery' // Distinguish between delivery and retrieval
                 };
                 try {
-                    // Add document to Firestore
+                    // Add document to the 'rentals' collection in Firestore
                     await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
                     await showModal('Success', 'Delivery item added!');
-                    
-                    deliveryAddedCurrent = true; // Mark delivery as added for current input
-                    // If both delivery and retrieval have been added from the same input set, clear inputs
-                    if (deliveryAddedCurrent && retrievalAddedCurrent) {
-                        clearCommonInputs();
-                        resetCurrentAddFlags(); // Reset flags for next input set
-                    }
+                    clearCommonInputs(); // Clear inputs after successful addition
                 } catch (error) {
                     console.error("Error adding delivery document: ", error);
                     await showModal('Error', 'Failed to add delivery item. Please try again.');
@@ -490,16 +458,10 @@
                     type: 'retrieval' // Distinguish between delivery and retrieval
                 };
                 try {
-                    // Add document to Firestore
+                    // Add document to the 'rentals' collection in Firestore
                     await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
                     await showModal('Success', 'Retrieval item added!');
-                    
-                    retrievalAddedCurrent = true; // Mark retrieval as added for current input
-                    // If both delivery and retrieval have been added from the same input set, clear inputs
-                    if (deliveryAddedCurrent && retrievalAddedCurrent) {
-                        clearCommonInputs();
-                        resetCurrentAddFlags(); // Reset flags for next input set
-                    }
+                    clearCommonInputs(); // Clear inputs after successful addition
                 } catch (error) {
                     console.error("Error adding retrieval document: ", error);
                     await showModal('Error', 'Failed to add retrieval item. Please try again.');
