@@ -103,8 +103,8 @@
                 <option value="Third-Party Courier">Third-Party Courier</option>
             </select>
             <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4 mt-4">
-                <button id="add-delivery-btn" class="w-full sm:w-1/2 px-4 py-2 bg-lente-primary text-white rounded-md hover:bg-opacity-90 transition-colors duration-200">Add as Delivery</button>
-                <button id="add-retrieval-btn" class="w-full sm:w-1/2 px-4 py-2 bg-lente-primary text-white rounded-md hover:bg-opacity-90 transition-colors duration-200">Add as Retrieval</button>
+                <!-- Changed to a single button -->
+                <button id="add-rental-request-btn" class="w-full px-4 py-2 bg-lente-primary text-white rounded-md hover:bg-opacity-90 transition-colors duration-200">Add Rental Request</button>
             </div>
         </div>
     </section>
@@ -440,6 +440,7 @@
         const commonBookingEndDate = document.getElementById('common-booking-end-date');
         const commonBookingEndTime = document.getElementById('common-booking-end-time');
         const commonCourierType = document.getElementById('common-courier-type');
+        const addRentalRequestBtn = document.getElementById('add-rental-request-btn'); // New button ID
 
         /**
          * Clears all common input fields in the "Add New Rental Request" section.
@@ -455,71 +456,54 @@
             commonCourierType.value = '';
         }
 
-        // Add New Delivery Item (using common inputs)
-        document.getElementById('add-delivery-btn').addEventListener('click', async () => {
-            console.log("Add as Delivery button clicked.");
+        // Add New Rental Request (adds both delivery and retrieval)
+        addRentalRequestBtn.addEventListener('click', async () => {
+            console.log("Add Rental Request button clicked.");
             const renter = commonRenterName.value.trim();
             const camera = commonCameraModel.value;
-            const date = commonBookingStartDate.value; // Delivery uses start date
-            const time = commonBookingStartTime.value; // Delivery uses start time
+            const deliveryDate = commonBookingStartDate.value;
+            const deliveryTime = commonBookingStartTime.value;
+            const retrievalDate = commonBookingEndDate.value;
+            const retrievalTime = commonBookingEndTime.value;
             const courierType = commonCourierType.value;
 
-            console.log("Delivery Input Values:", { renter, camera, date, time, courierType });
+            console.log("Rental Request Input Values:", { renter, camera, deliveryDate, deliveryTime, retrievalDate, retrievalTime, courierType });
 
-            if (renter && camera && date && time && courierType) {
-                const newItem = {
-                    id: `delivery-${Date.now()}`, // Unique ID for local storage
+            if (renter && camera && deliveryDate && deliveryTime && retrievalDate && retrievalTime && courierType) {
+                // Create Delivery item
+                const newDeliveryItem = {
+                    id: `delivery-${Date.now()}`, // Unique ID
                     renter,
                     camera,
-                    date,
-                    time,
+                    date: deliveryDate,
+                    time: deliveryTime,
                     courierType,
                     status: 'Pending',
-                    type: 'delivery' // Distinguish between delivery and retrieval
+                    type: 'delivery'
                 };
-                deliveries.push(newItem);
-                saveData(); // Save to localStorage
-                renderLists(); // Re-render lists
-                await showModal('Success', 'Delivery item added!');
-                console.log("Delivery item added locally with ID:", newItem.id);
-                clearCommonInputs(); // Clear inputs after successful addition
-            } else {
-                await showModal('Input Required', 'Please fill in all required fields for delivery (Renter, Camera, Start Date/Time, Courier Type).');
-                console.log("Missing required fields for delivery.");
-            }
-        });
+                deliveries.push(newDeliveryItem);
 
-        // Add New Retrieval Item (using common inputs)
-        document.getElementById('add-retrieval-btn').addEventListener('click', async () => {
-            console.log("Add as Retrieval button clicked.");
-            const renter = commonRenterName.value.trim();
-            const camera = commonCameraModel.value;
-            const date = commonBookingEndDate.value; // Retrieval uses end date
-            const time = commonBookingEndTime.value; // Retrieval uses end time
-            const courierType = commonCourierType.value;
-
-            console.log("Retrieval Input Values:", { renter, camera, date, time, courierType });
-
-            if (renter && camera && date && time && courierType) {
-                const newItem = {
-                    id: `retrieval-${Date.now()}`, // Unique ID for local storage
+                // Create Retrieval item
+                const newRetrievalItem = {
+                    id: `retrieval-${Date.now() + 1}`, // Unique ID (ensure it's different from delivery)
                     renter,
                     camera,
-                    date,
-                    time,
+                    date: retrievalDate,
+                    time: retrievalTime,
                     courierType,
                     status: 'Pending',
-                    type: 'retrieval' // Distinguish between delivery and retrieval
+                    type: 'retrieval'
                 };
-                retrievals.push(newItem);
-                saveData(); // Save to localStorage
+                retrievals.push(newRetrievalItem);
+
+                saveData(); // Save both to localStorage
                 renderLists(); // Re-render lists
-                await showModal('Success', 'Retrieval item added!');
-                console.log("Retrieval item added locally with ID:", newItem.id);
+                await showModal('Success', 'Rental request added for both delivery and retrieval!');
+                console.log("Rental request added locally for delivery (ID:", newDeliveryItem.id, ") and retrieval (ID:", newRetrievalItem.id, ")");
                 clearCommonInputs(); // Clear inputs after successful addition
             } else {
-                await showModal('Input Required', 'Please fill in all required fields for retrieval (Renter, Camera, End Date/Time, Courier Type).');
-                console.log("Missing required fields for retrieval.");
+                await showModal('Input Required', 'Please fill in all required fields for the rental request (Renter, Camera, Booking Start Date/Time, Booking End Date/Time, Courier Type).');
+                console.log("Missing required fields for rental request.");
             }
         });
 
