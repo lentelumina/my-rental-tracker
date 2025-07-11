@@ -174,36 +174,44 @@
         </div>
     </div>
 
-    <script type="module">
-        // Firebase SDK imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global variables provided by the Canvas environment
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-        // Ensure firebaseConfig is always a valid object, even if __firebase_config is undefined or empty string
-        const firebaseConfig = typeof __firebase_config !== 'undefined' && __firebase_config.trim() !== '' ? JSON.parse(__firebase_config) : {};
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
-        // Initialize Firebase
-        let app, db, auth;
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            console.log("Firebase initialized successfully.");
-            // Log the actual appId and firebaseConfig values for debugging
-            console.log("App ID:", appId);
-            console.log("Firebase Config:", firebaseConfig);
-        } catch (e) {
-            console.error("Firebase initialization failed:", e);
-            showModal("Firebase Error", `Failed to initialize Firebase. Check your '__firebase_config'. Error: ${e.message}`);
-        }
-
-        // Data arrays (will be populated from Firestore)
+    <script>
+        // Data arrays (will be populated from localStorage)
         let deliveries = [];
         let retrievals = [];
+
+        // --- Local Storage Management ---
+        const DELIVERY_STORAGE_KEY = 'lenteLuminaDeliveries';
+        const RETRIEVAL_STORAGE_KEY = 'lenteLuminaRetrievals';
+
+        /**
+         * Loads data from local storage into the global arrays.
+         */
+        function loadData() {
+            try {
+                deliveries = JSON.parse(localStorage.getItem(DELIVERY_STORAGE_KEY)) || [];
+                retrievals = JSON.parse(localStorage.getItem(RETRIEVAL_STORAGE_KEY)) || [];
+                console.log("Data loaded from localStorage.");
+            } catch (e) {
+                console.error("Error loading data from localStorage:", e);
+                showModal("Storage Error", "Failed to load saved data. Your browser's local storage might be full or corrupted.");
+                deliveries = [];
+                retrievals = [];
+            }
+        }
+
+        /**
+         * Saves the current deliveries and retrievals arrays to local storage.
+         */
+        function saveData() {
+            try {
+                localStorage.setItem(DELIVERY_STORAGE_KEY, JSON.stringify(deliveries));
+                localStorage.setItem(RETRIEVAL_STORAGE_KEY, JSON.stringify(retrievals));
+                console.log("Data saved to localStorage.");
+            } catch (e) {
+                console.error("Error saving data to localStorage:", e);
+                showModal("Storage Error", "Failed to save data. Your browser's local storage might be full.");
+            }
+        }
 
         // --- Modal Functions ---
         const modalOverlay = document.getElementById('custom-modal-overlay');
@@ -350,7 +358,7 @@
          */
         function createRentalCard(item, type) {
             const card = document.createElement('div');
-            card.id = `item-${item.id}`; // Use Firestore document ID for unique ID
+            card.id = `item-${item.id}`; // Use unique ID for each card
             card.className = `bg-lente-accent bg-opacity-30 p-4 rounded-lg shadow-sm border border-lente-accent flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 ${item.status === 'Completed' ? 'opacity-50 line-through' : ''}`;
 
             // Format date and time for display
@@ -378,15 +386,22 @@
             toggleButton.addEventListener('click', async () => {
                 console.log(`Attempting to toggle status for item ID: ${item.id}`);
                 const newStatus = item.status === 'Pending' ? 'Completed' : 'Pending';
-                try {
-                    // Update the document in the 'rentals' collection using its Firestore ID
-                    await updateDoc(doc(db, `artifacts/${appId}/public/data/rentals`, item.id), { status: newStatus });
-                    await showModal('Success', `Item status updated to ${newStatus}!`);
-                    console.log(`Successfully updated item ID: ${item.id} to status: ${newStatus}`);
-                } catch (error) {
-                    console.error("Error updating document: ", error);
-                    await showModal('Error', 'Failed to update item status. Please try again.');
+                
+                if (type === 'delivery') {
+                    const index = deliveries.findIndex(d => d.id === item.id);
+                    if (index !== -1) {
+                        deliveries[index].status = newStatus;
+                    }
+                } else if (type === 'retrieval') {
+                    const index = retrievals.findIndex(r => r.id === item.id);
+                    if (index !== -1) {
+                        retrievals[index].status = newStatus;
+                    }
                 }
+                saveData(); // Save changes to localStorage
+                renderLists(); // Re-render lists to reflect status change
+                await showModal('Success', `Item status updated to ${newStatus}!`);
+                console.log(`Successfully updated item ID: ${item.id} to status: ${newStatus}`);
             });
             actionsDiv.appendChild(toggleButton);
 
@@ -398,15 +413,15 @@
                 console.log(`Attempting to delete item ID: ${item.id}`);
                 const confirmed = await showModal('Confirm Deletion', `Are you sure you want to delete ${item.renter}'s ${type} item?`, true);
                 if (confirmed) {
-                    try {
-                        // Delete the document from the 'rentals' collection using its Firestore ID
-                        await deleteDoc(doc(db, `artifacts/${appId}/public/data/rentals`, item.id));
-                        await showModal('Success', 'Item deleted successfully!');
-                        console.log(`Successfully deleted item ID: ${item.id}`);
-                    } catch (error) {
-                        console.error("Error deleting document: ", error);
-                        await showModal('Error', 'Failed to delete item. Please try again.');
+                    if (type === 'delivery') {
+                        deliveries = deliveries.filter(d => d.id !== item.id);
+                    } else if (type === 'retrieval') {
+                        retrievals = retrievals.filter(r => r.id !== item.id);
                     }
+                    saveData(); // Save changes to localStorage
+                    renderLists(); // Re-render lists after deletion
+                    await showModal('Success', 'Item deleted successfully!');
+                    console.log(`Successfully deleted item ID: ${item.id}`);
                 } else {
                     console.log("Deletion cancelled by user.");
                 }
@@ -453,6 +468,7 @@
 
             if (renter && camera && date && time && courierType) {
                 const newItem = {
+                    id: `delivery-${Date.now()}`, // Unique ID for local storage
                     renter,
                     camera,
                     date,
@@ -461,16 +477,12 @@
                     status: 'Pending',
                     type: 'delivery' // Distinguish between delivery and retrieval
                 };
-                try {
-                    // Add document to the 'rentals' collection in Firestore
-                    const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
-                    await showModal('Success', 'Delivery item added!');
-                    console.log("Delivery item added to Firestore with ID:", docRef.id);
-                    clearCommonInputs(); // Clear inputs after successful addition
-                } catch (error) {
-                    console.error("Error adding delivery document: ", error);
-                    await showModal('Error', 'Failed to add delivery item. Please try again.');
-                }
+                deliveries.push(newItem);
+                saveData(); // Save to localStorage
+                renderLists(); // Re-render lists
+                await showModal('Success', 'Delivery item added!');
+                console.log("Delivery item added locally with ID:", newItem.id);
+                clearCommonInputs(); // Clear inputs after successful addition
             } else {
                 await showModal('Input Required', 'Please fill in all required fields for delivery (Renter, Camera, Start Date/Time, Courier Type).');
                 console.log("Missing required fields for delivery.");
@@ -490,6 +502,7 @@
 
             if (renter && camera && date && time && courierType) {
                 const newItem = {
+                    id: `retrieval-${Date.now()}`, // Unique ID for local storage
                     renter,
                     camera,
                     date,
@@ -498,16 +511,12 @@
                     status: 'Pending',
                     type: 'retrieval' // Distinguish between delivery and retrieval
                 };
-                try {
-                    // Add document to the 'rentals' collection in Firestore
-                    const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
-                    await showModal('Success', 'Retrieval item added!');
-                    console.log("Retrieval item added to Firestore with ID:", docRef.id);
-                    clearCommonInputs(); // Clear inputs after successful addition
-                } catch (error) {
-                    console.error("Error adding retrieval document: ", error);
-                    await showModal('Error', 'Failed to add retrieval item. Please try again.');
-                }
+                retrievals.push(newItem);
+                saveData(); // Save to localStorage
+                renderLists(); // Re-render lists
+                await showModal('Success', 'Retrieval item added!');
+                console.log("Retrieval item added locally with ID:", newItem.id);
+                clearCommonInputs(); // Clear inputs after successful addition
             } else {
                 await showModal('Input Required', 'Please fill in all required fields for retrieval (Renter, Camera, End Date/Time, Courier Type).');
                 console.log("Missing required fields for retrieval.");
@@ -520,60 +529,10 @@
         document.getElementById('sort-retrieval-by').addEventListener('change', renderLists);
         document.getElementById('filter-retrieval-status').addEventListener('change', renderLists);
 
-        // Authentication state listener and data fetching
-        onAuthStateChanged(auth, async (user) => {
-            console.log("Authentication state changed. User:", user ? user.uid : "No user");
-            // Sign in anonymously if no user is authenticated or custom token is not provided
-            if (!user && !initialAuthToken) {
-                try {
-                    console.log("Attempting anonymous sign-in...");
-                    await signInAnonymously(auth);
-                    console.log("Anonymous sign-in successful.");
-                } catch (error) {
-                    console.error("Error during anonymous authentication:", error);
-                    await showModal("Authentication Error", `Anonymous authentication failed. Please check Firebase Authentication settings. Error: ${error.message}`);
-                }
-            } else if (!user && initialAuthToken) {
-                // Use custom token if provided
-                try {
-                    console.log("Attempting custom token sign-in...");
-                    await signInWithCustomToken(auth, initialAuthToken);
-                    console.log("Custom token sign-in successful.");
-                } catch (error) {
-                    console.error("Error during custom token authentication:", error);
-                    await showModal("Authentication Error", `Custom token authentication failed. Please check your token. Error: ${error.message}`);
-                }
-            }
-            
-            // After authentication attempt, check if a user is now available
-            if (auth.currentUser) {
-                console.log("User authenticated. UID:", auth.currentUser.uid);
-                // Set up the main snapshot listener for rental data from the public collection
-                console.log(`Setting up Firestore snapshot listener for artifacts/${appId}/public/data/rentals`);
-                onSnapshot(query(collection(db, `artifacts/${appId}/public/data/rentals`)), (snapshot) => {
-                    console.log("Firestore snapshot received for rentals.");
-                    deliveries = []; // Clear current data
-                    retrievals = []; // Clear current data
-
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        // Add the Firestore document ID to the item object
-                        const item = { id: doc.id, ...data }; 
-                        if (item.type === 'delivery') {
-                            deliveries.push(item);
-                        } else if (item.type === 'retrieval') {
-                            retrievals.push(item);
-                        }
-                    });
-                    console.log(`Fetched ${deliveries.length} deliveries and ${retrievals.length} retrievals.`);
-                    renderLists(); // Re-render lists after data changes
-                }, (error) => {
-                    console.error("Error listening to rentals: ", error);
-                    showModal("Data Load Error", `Failed to load rental data. Please check your connection and Firestore Security Rules. Error: ${error.message}`);
-                });
-            } else {
-                console.log("User not authenticated after all attempts. Firestore operations will likely fail.");
-            }
+        // Initial load and render when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData(); // Load data from localStorage
+            renderLists(); // Render lists based on loaded data
         });
     </script>
 </body>
