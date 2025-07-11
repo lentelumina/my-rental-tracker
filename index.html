@@ -61,10 +61,16 @@
     <!-- Header Section -->
     <header class="w-full max-w-4xl bg-white rounded-xl shadow-lente p-6 mb-8 flex flex-col sm:flex-row items-center justify-center sm:justify-between">
         <div class="flex items-center space-x-3 mb-4 sm:mb-0">
-            <!-- Removed Logo-inspired icon (SVG) -->
-            <h1 class="text-3xl font-bold text-lente-primary">Lénte Lumina</h1>
+            <!-- Logo-inspired icon (simple shutter/lens SVG) -->
+            <svg class="w-10 h-10 text-lente-primary" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
+                <path d="M12 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5z"/>
+                <path d="M12 4.5a.5.5 0 01.5.5v1a.5.5 0 01-1 0v-1a.5.5 0 01.5-.5zM12 17.5a.5.5 0 01.5.5v1a.5.5 0 01-1 0v-1a.5.5 0 01.5-.5zM19.5 12a.5.5 0 01.5-.5h1a.5.5 0 010 1h-1a.5.5 0 01-.5-.5zM4.5 12a.5.5 0 01.5-.5h1a.5.5 0 010 1h-1a.5.5 0 01-.5-.5zM16.5 7.5a.5.5 0 01.35-.15l.707-.707a.5.5 0 01.707.707l-.707.707a.5.5 0 01-.707-.707zM7.5 16.5a.5.5 0 01-.35.15l-.707.707a.5.5 0 01-.707-.707l.707-.707a.5.5 0 01.707.707zM16.5 16.5a.5.5 0 01.35.15l.707.707a.5.5 0 01-.707.707l-.707-.707a.5.5 0 01-.35-.15zM7.5 7.5a.5.5 0 01-.35-.15l-.707-.707a.5.5 0 01.707-.707l.707.707a.5.5 0 01.35.15z"/>
+            </svg>
+            <h1 class="text-3xl font-bold text-lente-primary">Lenté Lumina</h1>
         </div>
-        <p class="text-lg text-lente-primary text-center sm:text-right">Where Light Meets Lens<br>Rental Tracker</p>
+        <p class="text-lg text-lente-primary text-center sm:text-right">Where Light Meets Lens.<br>Rental Tracker</p>
     </header>
 
     <!-- Consolidated Input Section -->
@@ -108,7 +114,7 @@
 
         <!-- Deliveries Section -->
         <section class="bg-white rounded-xl shadow-lente p-6">
-            <h2 class="text-2xl font-semibold text-lente-primary mb-5 border-b-2 border-lente-accent pb-3">For Delivery</h2>
+            <h2 class="text-2xl font-semibold text-lente-primary mb-5 border-b-2 border-lente-accent pb-3">For Delivery 🚚</h2>
             <!-- Sorting and Filtering for Delivery -->
             <div class="mb-4 space-y-2">
                 <label for="sort-delivery-by" class="block text-sm font-medium text-lente-primary">Sort Deliveries By:</label>
@@ -132,7 +138,7 @@
 
         <!-- Retrievals Section -->
         <section class="bg-white rounded-xl shadow-lente p-6">
-            <h2 class="text-2xl font-semibold text-lente-primary mb-5 border-b-2 border-lente-accent pb-3">For Retrieval</h2>
+            <h2 class="text-2xl font-semibold text-lente-primary mb-5 border-b-2 border-lente-accent pb-3">For Retrieval 📦</h2>
             <!-- Sorting and Filtering for Retrieval -->
             <div class="mb-4 space-y-2">
                 <label for="sort-retrieval-by" class="block text-sm font-medium text-lente-primary">Sort Retrievals By:</label>
@@ -300,11 +306,11 @@
          */
         function renderLists() {
             const sortDeliveryBy = document.getElementById('sort-delivery-by')?.value || 'dateAsc';
-            const filterDeliveryStatus = document.getElementById('filter-delivery-status')?.value || 'all';
+            const filterDeliveryStatus = document.getElementById('filter-delivery-status')?.value || 'Pending'; // Default to Pending
             renderItems(deliveries, 'delivery-list', 'delivery', sortDeliveryBy, filterDeliveryStatus);
 
             const sortRetrievalBy = document.getElementById('sort-retrieval-by')?.value || 'dateAsc';
-            const filterRetrievalStatus = document.getElementById('filter-retrieval-status')?.value || 'all';
+            const filterRetrievalStatus = document.getElementById('filter-retrieval-status')?.value || 'Pending'; // Default to Pending
             renderItems(retrievals, 'retrieval-list', 'retrieval', sortRetrievalBy, filterRetrievalStatus);
             console.log("Lists re-rendered based on current filters/sorts.");
         }
@@ -457,7 +463,6 @@
                 };
                 try {
                     // Add document to the 'rentals' collection in Firestore
-                    // CORRECTED PATH: Now writing to public/data/rentals
                     const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
                     await showModal('Success', 'Delivery item added!');
                     console.log("Delivery item added to Firestore with ID:", docRef.id);
@@ -495,7 +500,6 @@
                 };
                 try {
                     // Add document to the 'rentals' collection in Firestore
-                    // CORRECTED PATH: Now writing to public/data/rentals
                     const docRef = await addDoc(collection(db, `artifacts/${appId}/public/data/rentals`), newItem);
                     await showModal('Success', 'Retrieval item added!');
                     console.log("Retrieval item added to Firestore with ID:", docRef.id);
@@ -544,7 +548,7 @@
             // After authentication attempt, check if a user is now available
             if (auth.currentUser) {
                 console.log("User authenticated. UID:", auth.currentUser.uid);
-                // Set up the main snapshot listener for rental data
+                // Set up the main snapshot listener for rental data from the public collection
                 console.log(`Setting up Firestore snapshot listener for artifacts/${appId}/public/data/rentals`);
                 onSnapshot(query(collection(db, `artifacts/${appId}/public/data/rentals`)), (snapshot) => {
                     console.log("Firestore snapshot received for rentals.");
