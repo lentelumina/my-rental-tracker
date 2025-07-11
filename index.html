@@ -532,7 +532,10 @@
         // Initial load and render when the page loads
         document.addEventListener('DOMContentLoaded', () => {
             loadData(); // Load data from localStorage
-            renderLists(); // Render lists based on loaded data
+            // Set filter dropdowns to 'Pending' on load
+            document.getElementById('filter-delivery-status').value = 'Pending';
+            document.getElementById('filter-retrieval-status').value = 'Pending';
+            renderLists(); // Render lists based on loaded data and default filters
         });
     </script>
 </body>
